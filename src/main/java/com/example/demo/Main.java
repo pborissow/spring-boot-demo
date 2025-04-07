@@ -2,7 +2,7 @@ package com.example.demo;
 import java.util.*;
 
 import javaxt.io.Jar;
-import javaxt.express.ConfigFile;
+import javaxt.express.ConfigFile;import javaxt.json.JSONObject;
 import static javaxt.utils.Console.*;
 
 public class Main {
@@ -63,13 +63,23 @@ public class Main {
         Config.load(configFile);
 
 
-      //Get port
+
+      //Start Kafka Listener
+        JSONObject kafkaConfig = Config.get("kafka").toJSONObject();
+        if (kafkaConfig==null){
+            System.out.println("Missing kafka config");
+            return;
+        }
+        String kafkaHost = kafkaConfig.get("host").toString();
+        String kafkaTopic = kafkaConfig.get("topic").toString();
+        new Thread(new Kafka(kafkaHost, kafkaTopic)).start();
+
+
+
+      //Start web server
         Integer port = getValue(args, "-port", "-p").toInteger();
         if (port==null) port = Config.get("webapp").get("port").toInteger();
         if (port==null) port = 8080;
-
-
-      //Start server
         WebServer.start(port);
 
     }
