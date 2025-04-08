@@ -117,6 +117,8 @@ public class Config {
 
 
         javaxt.sql.Database database = config.getDatabase();
+        String userName = database.getUserName();
+        String password = database.getPassword();
 
 
         if (database == null){
@@ -131,8 +133,8 @@ public class Config {
 
         HikariConfig hk = new HikariConfig();
         hk.setJdbcUrl(database.getConnectionString());
-        //hk.setUsername("your_username");
-        //hk.setPassword("your_password");
+        if (userName!=null) hk.setUsername(userName);
+        if (password!=null) hk.setPassword(password);
         hk.setDriverClassName(database.getDriver().getClassName());
         hk.setMaximumPoolSize(database.getConnectionPoolSize());
         hk.setConnectionTimeout(60000);
