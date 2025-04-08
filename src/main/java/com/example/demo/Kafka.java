@@ -1,8 +1,9 @@
 package com.example.demo;
+import com.example.demo.persistance.*;
 
 import java.util.*;
 import java.time.Duration;
-import static javaxt.utils.Console.console;
+import javaxt.json.JSONObject;
 
 //Kafka Stuff
 import org.apache.kafka.clients.consumer.*;
@@ -21,14 +22,32 @@ public class Kafka implements Runnable {
 
     private String host;
     private String topic;
+    private RequestRepository requestRepository;
 
 
   //**************************************************************************
   //** Constructor
   //**************************************************************************
-    public Kafka(String host, String topic) {
+    public Kafka(String host, String topic, RequestRepository requestRepository) {
         this.host = host;
         this.topic = topic;
+        this.requestRepository = requestRepository;
+    }
+
+
+  //**************************************************************************
+  //** start
+  //**************************************************************************
+    public static void start(){
+        JSONObject kafkaConfig = Config.get("kafka").toJSONObject();
+        if (kafkaConfig==null){
+            System.out.println("Missing kafka config");
+            return;
+        }
+        String kafkaHost = kafkaConfig.get("host").toString();
+        String kafkaTopic = kafkaConfig.get("topic").toString();
+        RequestRepository requestRepository = (RequestRepository) Config.get("requestRepository").toObject();
+        new Thread(new Kafka(kafkaHost, kafkaTopic, requestRepository)).start();
     }
 
 
@@ -102,6 +121,12 @@ public class Kafka implements Runnable {
         Integer partition = record.partition();
         Long offset = record.offset();
 
+        RequestEntity httpRequest = new RequestEntity();
+        httpRequest.setDate(date.getDate());
+        httpRequest.setDomain(domain);
+        httpRequest.setPath(path);
+
+        requestRepository.save(httpRequest);
     }
 
 }
