@@ -1,9 +1,11 @@
 package com.example.demo;
+
 import java.util.*;
 
 import javaxt.io.Jar;
-import javaxt.express.ConfigFile;import javaxt.json.JSONObject;
+import javaxt.express.ConfigFile;
 import static javaxt.utils.Console.*;
+
 
 public class Main {
 
@@ -62,17 +64,6 @@ public class Main {
       //Load the config file
         Config.load(configFile);
 
-
-
-      //Start Kafka Listener
-        JSONObject kafkaConfig = Config.get("kafka").toJSONObject();
-        if (kafkaConfig==null){
-            System.out.println("Missing kafka config");
-            return;
-        }
-        String kafkaHost = kafkaConfig.get("host").toString();
-        String kafkaTopic = kafkaConfig.get("topic").toString();
-        new Thread(new Kafka(kafkaHost, kafkaTopic)).start();
 
 
 

@@ -1,5 +1,7 @@
 package com.example.demo;
 
+import com.example.demo.persistance.RequestRepository;
+
 import jakarta.servlet.http.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -10,6 +12,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.servlet.*;
 
 import java.util.*;
+import static javaxt.utils.Timer.*;
 import static javaxt.utils.Console.*;
 
 @SpringBootApplication
@@ -20,6 +23,9 @@ public class WebServer {
     private HttpServlet servlet;
 
     private View defaultView;
+
+    @Autowired
+    RequestRepository requestRepository;
 
 
   //**************************************************************************
@@ -36,6 +42,28 @@ public class WebServer {
                 me.processRequest(request, response);
             }
         };
+
+
+
+      //Start Kafka
+        new Thread(new Runnable() {
+            public void run() {
+                ArrayList<javaxt.utils.Timer> timers = new ArrayList<>();
+                timers.add(setInterval(()->{
+                    if (requestRepository!=null) {
+
+                      //Cancel this timer
+                        timers.get(0).cancel();
+
+                      //Update config
+                        Config.set("requestRepository", requestRepository);
+
+                      //Start kafka listener
+                        Kafka.start();
+                    }
+                }, 400));
+            }
+        }).start();
     }
 
 
