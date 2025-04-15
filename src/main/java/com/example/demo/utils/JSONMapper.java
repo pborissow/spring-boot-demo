@@ -11,6 +11,14 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
+//******************************************************************************
+//**  JSONMapper
+//******************************************************************************
+/**
+ *   Custom Jackson ObjectMapper used to format dates and skip nulls when
+ *   serializing objects to json
+ *
+ ******************************************************************************/
 
 public class JSONMapper extends ObjectMapper {
 
@@ -21,13 +29,7 @@ public class JSONMapper extends ObjectMapper {
 
             public void serialize(OffsetDateTime value, JsonGenerator jgen, SerializerProvider provider)
             throws IOException {
-                String stringValue = value.toString();
-                if(stringValue != null && !stringValue.isEmpty() && !stringValue.equals("null")) {
-                    jgen.writeString(value.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-                }
-                else {
-                    jgen.writeNull();
-                }
+                jgen.writeString(value.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
             }
 
             public Class<OffsetDateTime> handledType() {
@@ -40,15 +42,9 @@ public class JSONMapper extends ObjectMapper {
 
             public void serialize(Date value, JsonGenerator jgen, SerializerProvider provider)
             throws IOException {
-                String stringValue = value.toString();
-                if(stringValue != null && !stringValue.isEmpty() && !stringValue.equals("null")) {
-                    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
-                    df.setTimeZone(tz);
-                    jgen.writeString(df.format(value));
-                }
-                else {
-                    jgen.writeNull();
-                }
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+                df.setTimeZone(tz);
+                jgen.writeString(df.format(value));
             }
 
             public Class<Date> handledType() {
