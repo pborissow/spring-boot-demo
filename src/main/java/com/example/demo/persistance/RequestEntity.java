@@ -26,12 +26,16 @@ public class RequestEntity {
     }
 
     public void setDate(Date date) {
-        int timeZoneOffset = date.getTimezoneOffset();
-        ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(-1*timeZoneOffset*60);
-        this.date = OffsetDateTime.ofInstant(date.toInstant(), zoneOffset);
+        if (date==null) this.date = null;
+        else{
+            int timeZoneOffset = date.getTimezoneOffset();
+            ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(-1*timeZoneOffset*60);
+            this.date = OffsetDateTime.ofInstant(date.toInstant(), zoneOffset);
+        }
     }
 
     public Date getDate() {
+        if (date==null) return null;
         return Date.from(date.toInstant());
     }
 
