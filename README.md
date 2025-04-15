@@ -10,6 +10,38 @@ to a Kafka server that is then consumed by this application.
 - REST API used to server up data from a database via a repository layer
 - ETL data from a remote Kafka service
 
+## Config File
+
+This app requires a config file to start. The config file is a JSON 
+document that contains various configuration settings. At a minimum, 
+the config file should include connection information for the Kafka 
+server. Example:
+```json
+{
+    "kafka" : {
+        "host"  : "localhost:9092",
+        "topic" : "http-requests"
+    }
+}
+```
+By default, this app will create a local H2 database to persist HTTP requests
+from Kafka. You can specify a different database in your config like this:
+```json
+{
+    ...,
+  
+    "database" : {
+        "driver" : "PostgreSQL",
+        "host" : "localhost:5432",
+        "name" : "test-db",
+        "username" : "postgres",
+        "password" : "***********",
+        "maxConnections" : 50
+    }
+}
+```
+
+
 ## Spring Boot Anti-Patterns
 There are several unorthodox techniques used in this project stemming
 from my personal preference/belief that configuration files should
