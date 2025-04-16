@@ -2,6 +2,7 @@ package com.example.demo;
 
 import java.util.*;
 
+import javaxt.json.*;
 import javaxt.io.Jar;
 import javaxt.express.ConfigFile;
 import static javaxt.utils.Console.*;
@@ -65,14 +66,39 @@ public class Main {
         Config.load(configFile);
 
 
-
-
       //Start web server
-        Integer port = getValue(args, "-port", "-p").toInteger();
-        if (port==null) port = Config.get("webapp").get("port").toInteger();
-        if (port==null) port = 8080;
-        WebServer.start(port);
+        {
 
+
+          //Get port
+            Integer port = getValue(args, "-port", "-p").toInteger();
+            if (port==null) port = Config.get("webapp").get("port").toInteger();
+            if (port==null) port = 8080;
+
+
+          //Get web root
+            String webRoot = getValue(args, "-web", "-dir").toString();
+            if (webRoot==null) webRoot = Config.get("webapp").get("dir").toString();
+            if (webRoot==null && dir!=null) webRoot = dir + "web/javaxt";
+            try{
+                if (!new javaxt.io.Directory(webRoot).exists()) throw new Exception();
+            }
+            catch (Exception e){
+                System.out.println("Could not find web directory. " +
+                "Use the \"-web\" parameter to specify a path or update the \"webapp\" " +
+                "settings in your config file");
+            }
+
+
+          //Update config settings as needed
+            if (Config.get("webapp").isNull()) Config.set("webapp", new JSONObject());
+            Config.get("webapp").toJSONObject().set("port", port);
+            Config.get("webapp").toJSONObject().set("dir", new javaxt.io.Directory(webRoot));
+
+
+          //Start web server
+            WebServer.start();
+        }
     }
 
 }

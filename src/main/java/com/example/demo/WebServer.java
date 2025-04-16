@@ -3,6 +3,9 @@ package com.example.demo;
 import com.example.demo.persistance.RequestRepository;
 
 import jakarta.servlet.http.*;
+
+
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,8 +15,12 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.servlet.*;
 
 import java.util.*;
+import javaxt.io.Directory;
+import javaxt.express.FileManager;
+
 import static javaxt.utils.Timer.*;
 import static javaxt.utils.Console.*;
+
 
 @SpringBootApplication
 @RestController
@@ -23,6 +30,8 @@ public class WebServer {
     private HttpServlet servlet;
 
     private View defaultView;
+    private Directory webRoot;
+    private FileManager fileManager;
 
     @Autowired
     RequestRepository requestRepository;
@@ -33,6 +42,12 @@ public class WebServer {
   //**************************************************************************
     WebServer(){
         console.log("Starting Web Server...");
+
+
+      //Instantiate FileManager
+        webRoot = (javaxt.io.Directory) Config.get("webapp").get("dir").toObject();
+        fileManager = new FileManager(webRoot);
+
 
       //Create default "view"
         WebServer me = this;
@@ -72,8 +87,9 @@ public class WebServer {
   //**************************************************************************
   /** Used to start the web server
    */
-    public static void start(int port){
+    public static void start(){
 
+        Integer port = Config.get("webapp").get("port").toInteger();
         var args = new String[]{"--server.port="+port};
 
         SpringApplication.run(WebServer.class, args);
@@ -91,64 +107,60 @@ public class WebServer {
         return new ModelAndView(defaultView);
     }
 
-//  //**************************************************************************
-//  //** processRequest
-//  //**************************************************************************
-//  /** Used to process HTTP requests
-//   */
-//    private void processRequest(HttpServletRequest request, HttpServletResponse response) throws Exception{
-//        var req = new javaxt.http.servlet.HttpServletRequest(request, servlet);
-//        processRequest(req, new javaxt.http.servlet.HttpServletResponse(req, response));
-//    }
-
 
   //**************************************************************************
   //** processRequest
   //**************************************************************************
   /** Used to process HTTP requests
    */
-    private void processRequest(HttpServletRequest request, HttpServletResponse response) throws Exception{
+    private void processRequest(jakarta.servlet.http.HttpServletRequest req,
+        jakarta.servlet.http.HttpServletResponse rsp) throws Exception {
 
 
-//      //Get path from url, excluding servlet path and leading "/" character
-//        String path = request.getPathInfo();
-//        if (path==null) path = request.getServletPath(); //Spring-specific oddity...
-//        if (path!=null) path = path.substring(1);
-//
-//
-//
-//      //Get first "directory" in the path
-//        String service = path==null ? "" : path.toLowerCase();
-//        if (service.contains("/")) service = service.substring(0, service.indexOf("/"));
-//
-//
-//        console.log(service, servlet.toString());
-//        //response.getWriter().write(request.getRequestURL() + " " + new Date());
+      //Convert jakarta request/response to javaxt request/response
+        var request = new javaxt.http.servlet.HttpServletRequest(req, servlet);
+        var response = new javaxt.http.servlet.HttpServletResponse(request, rsp);
 
 
-      //Create a ServiceRequest from the HttpServletRequest
-        var req = new javaxt.express.ServiceRequest(request, servlet);
+      //Get path from url, excluding servlet path and leading "/" character
+        String path = request.getPathInfo();
+        if (path==null) path = request.getServletPath(); //Spring-specific oddity...
+        if (path!=null) path = path.substring(1);
 
-      //Update path and get the request method
-        req.setPath(request.getServletPath()); //Spring-specific oddity...
-        String method = req.getMethod();
-        console.log(request.getPathInfo(), request.getServletPath(), method, req.getPath(0));
 
-      //Generate ServiceResponse
-        javaxt.express.ServiceResponse rsp;
-        if (method.equals("getFile")){
-            rsp = new javaxt.express.ServiceResponse(new javaxt.io.File("/temp/"+req.getPath(1)));
+      //Get first segment in the path
+        String service = path==null ? "" : path.toLowerCase();
+        if (service.contains("/")) service = service.substring(0, service.indexOf("/"));
+
+
+      //Send static file if we can
+        if (service.length()==0){
+
+          //If the service is empty, send welcome file (e.g. index.html)
+            fileManager.sendFile(request, response);
+            return;
         }
         else{
-            rsp = new javaxt.express.ServiceResponse("service: " + req.getService() + " method: " + method);
+
+          //Check if the service matches a file or folder in the web
+          //directory. If so, send the static file as requested.
+            for (Object obj : webRoot.getChildren()){
+                String name;
+                if (obj instanceof javaxt.io.File){
+                    name = ((javaxt.io.File) obj).getName();
+                }
+                else{
+                    name = ((javaxt.io.Directory) obj).getName();
+                }
+
+
+                if (service.equalsIgnoreCase(name)){
+                    fileManager.sendFile(path, request, response);
+                    if (response.getStatus()!=404) return;
+                }
+            }
         }
 
-
-      //Write ServiceResponse to the HttpServletResponse
-        rsp.send(response, req);
-
+        console.log("404", path);
     }
-
-
-
 }
